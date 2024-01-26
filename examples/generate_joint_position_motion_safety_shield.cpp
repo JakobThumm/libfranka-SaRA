@@ -84,8 +84,9 @@ int main(int argc, char** argv) {
 
     std::array<double, 7> initial_position;
     double time = 0.0;
-    robot.control([&initial_position, &time](const franka::RobotState& robot_state,
-                                             franka::Duration period) -> franka::JointPositions {
+    std::function<franka::JointPositions(const franka::RobotState&, franka::Duration)> safe_control_callback = 
+        [&initial_position, &time](const franka::RobotState& robot_state, franka::Duration period) 
+          -> franka::JointPositions {
       time += period.toSec();
 
       if (time == 0.0) {
@@ -104,7 +105,8 @@ int main(int argc, char** argv) {
         return franka::MotionFinished(output);
       }
       return output;
-    });
+    }
+    robot.control(safe_control_callback);
   } catch (const franka::Exception& e) {
     std::cout << e.what() << std::endl;
     return -1;
