@@ -7,6 +7,7 @@
 #include <vector>
 #include <chrono>
 #include <ctime>
+#include <thread>
 
 #include <franka/duration.h>
 #include <franka/exception.h>
@@ -23,6 +24,8 @@
  *
  * @warning Before executing this example, make sure there is enough space in front of the robot.
  */
+
+using namespace std::chrono_literals;
 
 int main(int argc, char** argv) {
   if (argc != 2) {
@@ -42,13 +45,14 @@ int main(int argc, char** argv) {
     franka::Model model = robot.loadModel();
 
     // First move the robot to a suitable joint configuration
-    std::array<double, 7> q_goal = {{0, -M_PI_4, 0, -3 * M_PI_4, 0, M_PI_2, M_PI_4}};
-    MotionGenerator motion_generator(0.5, q_goal);
+    std::array<double, 7> q_goal = {{0.0, -M_PI_4, 0, -3 * M_PI_4, 0, M_PI_2, M_PI_4}};
+    MotionGenerator motion_generator(0.1, q_goal);
     std::cout << "WARNING: This example will move the robot! "
               << "Please make sure to have the user stop button at hand!" << std::endl
               << "Press Enter to continue..." << std::endl;
     std::cin.ignore();
     robot.control(motion_generator);
+    std::this_thread::sleep_for(300ms);
     std::cout << "Finished moving to initial joint configuration." << std::endl;
     double speed_factor = 1.0;
     double control_time = 3.0;
@@ -60,7 +64,7 @@ int main(int argc, char** argv) {
     // Stiffness
     const std::array<double, 7> k_gains = {{600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0}};
     // Damping
-    const std::array<double, 7> d_gains = {{50.0, 50.0, 50.0, 50.0, 30.0, 25.0, 15.0}};
+    const std::array<double, 7> d_gains = {{100.0, 100.0, 100.0, 100.0, 60.0, 50.0, 30.0}};
 
     // Define callback for the joint torque control loop.
     std::function<franka::Torques(const franka::RobotState&, franka::Duration)>

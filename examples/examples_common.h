@@ -108,6 +108,7 @@ class ShieldMotionGenerator : MotionGenerator {
   double sample_time_;
   double last_shield_time_ = 0.0;
   std::vector<reach_lib::Point> dummy_human_meas_;
+  std::vector<reach_lib::Point> dummy_human_meas_unsafe_;
   safety_shield::ShieldType shield_type_ = safety_shield::ShieldType::SSM;
   safety_shield::SafetyShield shield_;
   double init_x_ = 0.0;

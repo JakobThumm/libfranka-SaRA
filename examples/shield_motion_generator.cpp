@@ -13,7 +13,7 @@
 ShieldMotionGenerator::ShieldMotionGenerator(double speed_factor, double control_time)
     : MotionGenerator(speed_factor, {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}){
   control_time_ = control_time;
-  sample_time_ = 0.001;
+  sample_time_ = 0.004;
   std::string trajectory_config_file = std::string("../../external/sara-shield/safety_shield/config/trajectory_parameters_panda.yaml");
   std::string robot_config_file = std::string("../../external/sara-shield/safety_shield/config/robot_parameters_panda.yaml");
   std::string mocap_config_file = std::string("../../external/sara-shield/safety_shield/config/cmu_mocap_no_hand.yaml");
@@ -24,10 +24,13 @@ ShieldMotionGenerator::ShieldMotionGenerator(double speed_factor, double control
                                   init_y_, init_z_, init_roll_, init_pitch_, init_yaw_, init_qpos, shield_type_);
   // Dummy human measurement
   std::vector<reach_lib::Point> dummy_human_meas(21);
+  std::vector<reach_lib::Point> dummy_human_meas_unsafe(21);
   for (int i = 0; i < 21; i++) {
     dummy_human_meas[i] = reach_lib::Point(10.0, 10.0, 0.0);
+    dummy_human_meas_unsafe[i] = reach_lib::Point(0.0, 0.0, 0.0);
   }
   dummy_human_meas_ = dummy_human_meas;
+  dummy_human_meas_unsafe_ = dummy_human_meas_unsafe;
 }
 
 void ShieldMotionGenerator::reset(const std::vector<double>& q_init) {
@@ -50,7 +53,13 @@ franka::JointPositions ShieldMotionGenerator::operator()(const franka::RobotStat
     shield_.newLongTermTrajectory(q_goal_vec_, {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
   }
   if (time_ >= last_shield_time_ + sample_time_) {
-    shield_.humanMeasurement(dummy_human_meas_, time_);
+    if (time_ <= control_time_) {
+      shield_.humanMeasurement(dummy_human_meas_, time_);
+    } else {
+      shield_.humanMeasurement(dummy_human_meas_unsafe_, time_);
+      std::cout << "Sent unsafe" << std::endl;
+    }
+    
     safety_shield::Motion next_motion = shield_.step(time_);
     std::vector<double> next_q = next_motion.getAngle();
     std::copy(next_q.begin(), next_q.end(), next_q_array_.begin());
