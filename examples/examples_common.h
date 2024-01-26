@@ -12,6 +12,10 @@
 #include <franka/robot.h>
 #include <franka/robot_state.h>
 
+#include "SaRA/reach_lib.hpp"
+#include "safety_shield/motion.h"
+#include "safety_shield/safety_shield.h"
+
 /**
  * @file examples_common.h
  * Contains common types and functions for the examples.
@@ -95,8 +99,23 @@ class ShieldMotionGenerator : MotionGenerator {
    */
   franka::JointPositions operator()(const franka::RobotState& robot_state, franka::Duration period);
 
-  void reset(const std::vector<double> q_goal);
+  void reset(const std::vector<double>& q_init);
+
+  void new_goal(const std::vector<double>& q_goal);
 
  private:
   double control_time_;
+  double sample_time_;
+  double last_shield_time_ = 0.0;
+  std::vector<reach_lib::Point> dummy_human_meas_;
+  safety_shield::ShieldType shield_type_ = safety_shield::ShieldType::SSM;
+  safety_shield::SafetyShield shield_;
+  double init_x_ = 0.0;
+  double init_y_ = 0.0;
+  double init_z_ = 0.0;
+  double init_roll_ = 0.0;
+  double init_pitch_ = 0.0;
+  double init_yaw_ = 0.0;
+  std::vector<double> q_goal_vec_;
+  std::array<double, 7> next_q_array_;
 };
