@@ -17,6 +17,7 @@ find_package(Threads REQUIRED)
 
 add_library(examples_common STATIC
   examples_common.cpp
+  shield_motion_generator.cpp
 )
 
 target_link_libraries(examples_common PUBLIC Franka::Franka Eigen3::Eigen3)

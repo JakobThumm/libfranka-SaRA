@@ -3,6 +3,8 @@
 #pragma once
 
 #include <array>
+#include <vector>
+#include <iostream>
 
 #include <Eigen/Core>
 
@@ -48,7 +50,7 @@ class MotionGenerator {
    */
   franka::JointPositions operator()(const franka::RobotState& robot_state, franka::Duration period);
 
- private:
+ protected:
   using Vector7d = Eigen::Matrix<double, 7, 1, Eigen::ColMajor>;
   using Vector7i = Eigen::Matrix<int, 7, 1, Eigen::ColMajor>;
 
@@ -56,7 +58,7 @@ class MotionGenerator {
   void calculateSynchronizedValues();
 
   static constexpr double kDeltaQMotionFinished = 1e-6;
-  const Vector7d q_goal_;
+  Vector7d q_goal_;
 
   Vector7d q_start_;
   Vector7d delta_q_;
@@ -69,7 +71,33 @@ class MotionGenerator {
 
   double time_ = 0.0;
 
-  Vector7d dq_max_ = (Vector7d() << 2.0, 2.0, 2.0, 2.0, 2.5, 2.5, 2.5).finished();
-  Vector7d ddq_max_start_ = (Vector7d() << 5, 5, 5, 5, 5, 5, 5).finished();
-  Vector7d ddq_max_goal_ = (Vector7d() << 5, 5, 5, 5, 5, 5, 5).finished();
+  Vector7d dq_max_ = (Vector7d() << 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0).finished();
+  Vector7d ddq_max_start_ = (Vector7d() << 10, 10, 10, 10, 10, 10, 10).finished();
+  Vector7d ddq_max_goal_ = (Vector7d() << 10, 10, 10, 10, 10, 10, 10).finished();
+};
+
+class ShieldMotionGenerator : MotionGenerator {
+ public:
+  /**
+   * Creates a new MotionGenerator instance for a target q.
+   *
+   * @param[in] speed_factor General speed factor in range [0, 1].
+   * @param[in] control_time Time in seconds for which the robot should be controlled.
+   */
+  ShieldMotionGenerator(double speed_factor, double control_time);
+
+  /**
+   * Sends joint position calculations
+   *
+   * @param[in] robot_state Current state of the robot.
+   * @param[in] period Duration of execution.
+   *
+   * @return Joint positions for use inside a control loop.
+   */
+  franka::JointPositions operator()(const franka::RobotState& robot_state, franka::Duration period);
+
+  void reset(const std::vector<double> q_goal);
+
+ private:
+  double control_time_;
 };
