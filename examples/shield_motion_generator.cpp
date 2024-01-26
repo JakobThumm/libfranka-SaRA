@@ -13,32 +13,55 @@
 ShieldMotionGenerator::ShieldMotionGenerator(double speed_factor, double control_time)
     : MotionGenerator(speed_factor, {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}){
   control_time_ = control_time;
+  sample_time_ = 0.004;
+  std::string trajectory_config_file = std::string("../../external/sara-shield/safety_shield/config/trajectory_parameters_panda.yaml");
+  std::string robot_config_file = std::string("../../external/sara-shield/safety_shield/config/robot_parameters_panda.yaml");
+  std::string mocap_config_file = std::string("../../external/sara-shield/safety_shield/config/cmu_mocap_no_hand.yaml");
+  
+  std::vector<double> init_qpos = {0, -M_PI_4, 0, -3 * M_PI_4, 0, M_PI_2, M_PI_4};
+  
+  shield_ = safety_shield::SafetyShield(sample_time_, trajectory_config_file, robot_config_file, mocap_config_file, init_x_,
+                                  init_y_, init_z_, init_roll_, init_pitch_, init_yaw_, init_qpos, shield_type_);
+  // Dummy human measurement
+  std::vector<reach_lib::Point> dummy_human_meas(21);
+  for (int i = 0; i < 21; i++) {
+    dummy_human_meas[i] = reach_lib::Point(10.0, 10.0, 0.0);
+  }
+  dummy_human_meas_ = dummy_human_meas;
 }
 
-void ShieldMotionGenerator::reset(const std::vector<double> q_goal) {
-  q_goal_ = Vector7d(q_goal.data());
+void ShieldMotionGenerator::reset(const std::vector<double>& q_init) {
+  time_ = 0.0;
+  shield_.reset(init_x_, init_y_, init_z_, init_roll_, init_pitch_, init_yaw_, q_init, time_, shield_type_);
+}
+
+void ShieldMotionGenerator::new_goal(const std::vector<double>& q_goal) {
+  q_goal_vec_ = q_goal;
   time_ = 0.0;
 }
 
 franka::JointPositions ShieldMotionGenerator::operator()(const franka::RobotState& robot_state,
                                                    franka::Duration period) {
   time_ += period.toSec();
-  std::cout << "ShieldMotionGenerator time = " << time_ << std::endl;
 
   if (time_ == 0.0) {
-    q_start_ = Vector7d(robot_state.q_d.data());
-    delta_q_ = q_goal_ - q_start_;
-    calculateSynchronizedValues();
+    std::vector<double> q_init(robot_state.q_d.begin(), robot_state.q_d.end());
+    reset(q_init);
+    shield_.newLongTermTrajectory(q_goal_vec_, {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
   }
+  if (time_ >= last_shield_time_ + sample_time_) {
+    shield_.humanMeasurement(dummy_human_meas_, time_);
+    safety_shield::Motion next_motion = shield_.step(time_);
+    std::vector<double> next_q = next_motion.getAngle();
+    std::copy(next_q.begin(), next_q.end(), next_q_array_.begin());
+    last_shield_time_ = time_;
+  }
+  
+  franka::JointPositions output(next_q_array_);
 
-  Vector7d delta_q_d;
-  bool motion_finished = calculateDesiredValues(time_, &delta_q_d);
-  // override motion finished
-  motion_finished = time_ >= control_time_;
-
-  std::array<double, 7> joint_positions;
-  Eigen::VectorXd::Map(&joint_positions[0], 7) = (q_start_ + delta_q_d);
-  franka::JointPositions output(joint_positions);
-  output.motion_finished = motion_finished;
+  if (time_ >= control_time_) {
+    std::cout << std::endl << "Finished motion, shutting down example" << std::endl;
+    return franka::MotionFinished(output);
+  }
   return output;
 }
