@@ -13,7 +13,7 @@
 ShieldMotionGenerator::ShieldMotionGenerator(double speed_factor, double control_time)
     : MotionGenerator(speed_factor, {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}){
   control_time_ = control_time;
-  sample_time_ = 0.004;
+  sample_time_ = 0.001;
   std::string trajectory_config_file = std::string("../../external/sara-shield/safety_shield/config/trajectory_parameters_panda.yaml");
   std::string robot_config_file = std::string("../../external/sara-shield/safety_shield/config/robot_parameters_panda.yaml");
   std::string mocap_config_file = std::string("../../external/sara-shield/safety_shield/config/cmu_mocap_no_hand.yaml");
