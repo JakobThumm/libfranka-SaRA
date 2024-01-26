@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Franka REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Poco REQUIRED COMPONENTS Foundation)
+find_package(SaRA REQUIRED)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
@@ -30,6 +31,7 @@ set(EXAMPLES
   generate_consecutive_motions
   generate_elbow_motion
   generate_joint_position_motion
+  generate_joint_position_motion_safety_shield
   generate_joint_velocity_motion
   grasp_object
   joint_impedance_control
@@ -41,7 +43,7 @@ set(EXAMPLES
 
 foreach(example ${EXAMPLES})
   add_executable(${example} ${example}.cpp)
-  target_link_libraries(${example} Franka::Franka examples_common Eigen3::Eigen3)
+  target_link_libraries(${example} Franka::Franka examples_common Eigen3::Eigen3 safety_shield SaRA)
 endforeach()
 
 target_link_libraries(joint_impedance_control Threads::Threads)

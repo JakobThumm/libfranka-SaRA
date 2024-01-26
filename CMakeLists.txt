@@ -6,7 +6,7 @@ project(libfranka
 
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -22,6 +22,9 @@ set(THIRDPARTY_SOURCES_DIR "${CMAKE_SOURCE_DIR}/3rdparty" CACHE PATH
 ## Dependencies
 find_package(Poco REQUIRED COMPONENTS Net Foundation)
 find_package(Eigen3 REQUIRED)
+find_package(SaRA REQUIRED)
+get_target_property(SaRA_INCLUDE_DIRS SaRA INTERFACE_INCLUDE_DIRECTORIES)
+message("SaRA include dirs: ${SaRA_INCLUDE_DIRS}")
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
@@ -102,12 +105,35 @@ target_include_directories(franka PUBLIC
   $<INSTALL_INTERFACE:include>
 )
 
+add_subdirectory(external/sara-shield/safety_shield)
+target_include_directories(franka PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/external/sara-shield/safety_shield/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
+target_include_directories(franka PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/external/sara-shield/safety_shield/external/spdlog/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
+target_include_directories(franka PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/external/sara-shield/safety_shield/external/yaml-cpp/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
+target_include_directories(franka PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/external/sara-shield/safety_shield/external/LongTermPlanner/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
 target_link_libraries(franka PRIVATE
   Poco::Foundation
   Poco::Net
   Eigen3::Eigen3
   Threads::Threads
   libfranka-common
+  safety_shield
+  SaRA
 )
 
 ## Installation

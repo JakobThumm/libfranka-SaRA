@@ -5,6 +5,23 @@
 
 With this library, you can control research versions of Franka Emika robots. See the [Franka Control Interface (FCI) documentation][fci-docs] for more information about what `libfranka` can do and how to set it up. The [generated API documentation][api-docs] also gives an overview of its capabilities.
 
+## Building
+```
+cd external/sara-shield/safety_shield/external/SaRA/ReachLib/
+mkdir build
+cd build
+cmake ..
+make -j10
+sudo make install
+cd <libfranka-SaRA-dir>
+mkdir build
+cd build
+cmake ..
+make -j10
+cpack -G DEB
+sudo dpkg -i libfranka*.deb
+```
+
 ## License
 
 `libfranka` is licensed under the [Apache 2.0 license][apache-2.0].
